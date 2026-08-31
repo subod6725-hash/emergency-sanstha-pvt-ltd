@@ -5,14 +5,26 @@ const path = require('path');
 const port = process.env.PORT || 3000;
 const root = __dirname;
 
-let currentUser = null; // session
-
 const mime = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.js': 'application/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8'
 };
+
+function parseCookies(req) {
+  const list = {};
+  const rc = req.headers.cookie;
+
+  if (rc) {
+    rc.split(';').forEach(cookie => {
+      const parts = cookie.split('=');
+      list[parts.shift().trim()] = decodeURIComponent(parts.join('='));
+    });
+  }
+
+  return list;
+}
 
 http.createServer((req, res) => {
 
@@ -25,9 +37,13 @@ http.createServer((req, res) => {
       const data = JSON.parse(body);
 
       if (data.username === 'admin' && data.password === '1234') {
-        currentUser = { role: 'admin' };
 
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+        // 🍪 COOKIE SET
+        res.writeHead(200, {
+          'Content-Type': 'application/json',
+          'Set-Cookie': 'auth=admin; HttpOnly; Path=/'
+        });
+
         return res.end(JSON.stringify({ success: true }));
       }
 
@@ -40,17 +56,21 @@ http.createServer((req, res) => {
 
   // ===== LOGOUT =====
   if (req.method === 'POST' && req.url === '/logout') {
-    currentUser = null;
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Set-Cookie': 'auth=; Max-Age=0; Path=/'
+    });
 
-    res.writeHead(200, { 'Content-Type': 'application/json' });
     return res.end(JSON.stringify({ success: true }));
   }
 
   // ===== CHECK AUTH =====
   if (req.method === 'GET' && req.url === '/check-auth') {
+    const cookies = parseCookies(req);
+
     res.writeHead(200, { 'Content-Type': 'application/json' });
 
-    if (currentUser && currentUser.role === 'admin') {
+    if (cookies.auth === 'admin') {
       res.end(JSON.stringify({ loggedIn: true }));
     } else {
       res.end(JSON.stringify({ loggedIn: false }));
