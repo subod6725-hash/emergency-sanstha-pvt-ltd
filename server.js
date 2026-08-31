@@ -12,20 +12,6 @@ const mime = {
   '.json': 'application/json; charset=utf-8'
 };
 
-function parseCookies(req) {
-  const list = {};
-  const rc = req.headers.cookie;
-
-  if (rc) {
-    rc.split(';').forEach(cookie => {
-      const parts = cookie.split('=');
-      list[parts.shift().trim()] = decodeURIComponent(parts.join('='));
-    });
-  }
-
-  return list;
-}
-
 http.createServer((req, res) => {
 
   // ===== LOGIN =====
@@ -38,10 +24,9 @@ http.createServer((req, res) => {
 
       if (data.username === 'admin' && data.password === '1234') {
 
-        // 🍪 COOKIE SET
         res.writeHead(200, {
           'Content-Type': 'application/json',
-          'Set-Cookie': 'auth=admin; HttpOnly; Path=/'
+          'Set-Cookie': 'auth=admin; HttpOnly'
         });
 
         return res.end(JSON.stringify({ success: true }));
@@ -58,7 +43,7 @@ http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/logout') {
     res.writeHead(200, {
       'Content-Type': 'application/json',
-      'Set-Cookie': 'auth=; Max-Age=0; Path=/'
+      'Set-Cookie': 'auth=; Max-Age=0'
     });
 
     return res.end(JSON.stringify({ success: true }));
@@ -66,20 +51,19 @@ http.createServer((req, res) => {
 
   // ===== CHECK AUTH =====
   if (req.method === 'GET' && req.url === '/check-auth') {
-    const cookies = parseCookies(req);
 
-    res.writeHead(200, { 'Content-Type': 'application/json' });
+    const cookie = req.headers.cookie || '';
 
-    if (cookies.auth === 'admin') {
-      res.end(JSON.stringify({ loggedIn: true }));
-    } else {
-      res.end(JSON.stringify({ loggedIn: false }));
+    if (cookie.includes('auth=admin')) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ loggedIn: true }));
     }
 
-    return;
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    return res.end(JSON.stringify({ loggedIn: false }));
   }
 
-  // ===== STATIC FILES =====
+  // ===== STATIC FILE =====
   let urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
   if (urlPath === '/') urlPath = '/index.html';
 
@@ -87,7 +71,7 @@ http.createServer((req, res) => {
 
   fs.readFile(filePath, (err, data) => {
     if (err) {
-      res.writeHead(404, {'Content-Type': 'text/plain'});
+      res.writeHead(404);
       return res.end('404 Not Found');
     }
 
