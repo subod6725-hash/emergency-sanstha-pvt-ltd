@@ -1,12 +1,8 @@
 {
-  "name": "emergency-sanstha-pvt-ltd",
+  "name": "emergency-project",
   "version": "1.0.0",
-  "private": true,
-  "description": "Emergency Sanstha Pvt Ltd website and admin panel",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js"
-  },
-  "engines": {
-    "node": ">=18"
   }
 }
