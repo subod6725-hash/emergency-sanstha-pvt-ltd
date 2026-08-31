@@ -1,1 +1,58 @@
-function openLogin(mode='login'){document.getElementById('modal').classList.add('open');document.getElementById('modalTitle').textContent=mode==='invest'?'Investor Login':mode==='request'?'Service Request Login':'Customer Login';document.getElementById('modalText').textContent=mode==='request'?'पहले login करके service request बनाएं।':'Registered mobile number और PIN दर्ज करें।'}function closeModal(){document.getElementById('modal').classList.remove('open')}function demoLogin(e){e.preventDefault();alert('Demo login successful. Production में secure backend/API authentication जोड़ना आवश्यक है।');closeModal()}function apply(product){alert(product+' application demo opened. Production में KYC, eligibility और secure application workflow जोड़ें।')}window.onclick=e=>{if(e.target.id==='modal')closeModal()}
+function openLogin(mode='login'){
+  document.getElementById('modal').classList.add('open');
+
+  document.getElementById('modalTitle').textContent =
+    mode==='invest' ? 'Investor Login' :
+    mode==='request' ? 'Service Request Login' :
+    'Admin Login';
+
+  document.getElementById('modalText').textContent =
+    'Username और Password डालें';
+}
+
+function closeModal(){
+  document.getElementById('modal').classList.remove('open');
+}
+
+// 🔥 REAL LOGIN (SERVER CONNECTED)
+function demoLogin(e){
+  e.preventDefault();
+
+  const username = document.getElementById('mobile').value;
+  const password = document.querySelector('input[type="password"]').value;
+
+  fetch('/login', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      username: username,
+      password: password
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if(data.success){
+      alert("Login Successful");
+
+      closeModal();
+
+      // 👉 Admin page open
+      window.location.href = "admin.html";
+    } else {
+      alert("Wrong username or password");
+    }
+  })
+  .catch(()=>{
+    alert("Server error");
+  });
+}
+
+function apply(product){
+  alert(product+' application demo opened.');
+}
+
+window.onclick = e => {
+  if(e.target.id==='modal') closeModal()
+}
