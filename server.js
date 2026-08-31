@@ -79,3 +79,15 @@ http.createServer((req, res) => {
 }).listen(port, () => {
   console.log("Server running on port " + port);
 });
+// ===== CHECK LOGIN =====
+if (req.method === 'GET' && req.url === '/check-auth') {
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+
+  if (currentUser && currentUser.role === 'admin') {
+    res.end(JSON.stringify({ loggedIn: true }));
+  } else {
+    res.end(JSON.stringify({ loggedIn: false }));
+  }
+
+  return;
+}
