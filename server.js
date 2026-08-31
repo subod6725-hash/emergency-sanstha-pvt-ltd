@@ -6,17 +6,16 @@ const port = process.env.PORT || 3000;
 const root = __dirname;
 
 const mime = {
-  '.html': 'text/html; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.js': 'application/javascript; charset=utf-8',
-  '.json': 'application/json; charset=utf-8'
+  '.html': 'text/html',
+  '.css': 'text/css',
+  '.js': 'application/javascript'
 };
 
-// ===== USERS (Demo) =====
-const users = {
-  admin: { username: "admin", password: "1234", role: "admin" },
-  customer: { username: "user", password: "1234", role: "customer" }
-};
+// ===== REAL USERS (Demo DB) =====
+let users = [
+  { username: "admin", password: "1234", role: "admin" },
+  { username: "user", password: "1234", role: "customer" }
+];
 
 http.createServer((req, res) => {
 
@@ -29,61 +28,43 @@ http.createServer((req, res) => {
     });
 
     req.on('end', () => {
-      try {
-        const data = JSON.parse(body);
+      const data = JSON.parse(body);
 
-        // Admin login
-        if (
-          data.username === users.admin.username &&
-          data.password === users.admin.password
-        ) {
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          return res.end(JSON.stringify({ success: true, role: "admin" }));
-        }
+      const user = users.find(
+        u => u.username === data.username && u.password === data.password
+      );
 
-        // Customer login
-        if (
-          data.username === users.customer.username &&
-          data.password === users.customer.password
-        ) {
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          return res.end(JSON.stringify({ success: true, role: "customer" }));
-        }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
 
-        // Invalid login
-        res.writeHead(200, { 'Content-Type': 'application/json' });
+      if (user) {
+        res.end(JSON.stringify({ success: true, role: user.role }));
+      } else {
         res.end(JSON.stringify({ success: false }));
-
-      } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: false, error: "Invalid data" }));
       }
     });
 
-    return; // IMPORTANT
+    return;
   }
 
-  // ===== FILE SERVER =====
+  // ===== ROOT FIX (IMPORTANT FOR RAILWAY) =====
   let urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
   if (urlPath === '/') urlPath = '/index.html';
 
-  const normalized = path.normalize(urlPath).replace(/^(\.\.[\/\\])+/, '');
-  const filePath = path.join(root, normalized);
+  const filePath = path.join(root, urlPath);
 
   fs.readFile(filePath, (err, data) => {
     if (err) {
-      res.writeHead(404, {'Content-Type': 'text/plain; charset=utf-8'});
-      return res.end('404 - Page Not Found');
+      res.writeHead(404);
+      return res.end("404 - Not Found");
     }
 
     res.writeHead(200, {
-      'Content-Type': mime[path.extname(filePath)] || 'application/octet-stream',
-      'Cache-Control': 'no-cache'
+      'Content-Type': mime[path.extname(filePath)] || 'text/plain'
     });
 
     res.end(data);
   });
 
-}).listen(port, '0.0.0.0', () => {
-  console.log(`Server running on port ${port}`);
+}).listen(port, () => {
+  console.log("Server running on port " + port);
 });
