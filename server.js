@@ -11,21 +11,22 @@ const mime = {
   '.js': 'application/javascript'
 };
 
-// ===== REAL USERS (Demo DB) =====
+// ===== USERS =====
 let users = [
   { username: "admin", password: "1234", role: "admin" },
   { username: "user", password: "1234", role: "customer" }
 ];
 
+// ===== SESSION =====
+let currentUser = null;
+
 http.createServer((req, res) => {
 
-  // ===== LOGIN API =====
+  // LOGIN
   if (req.method === 'POST' && req.url === '/login') {
     let body = '';
 
-    req.on('data', chunk => {
-      body += chunk.toString();
-    });
+    req.on('data', chunk => body += chunk);
 
     req.on('end', () => {
       const data = JSON.parse(body);
@@ -37,6 +38,7 @@ http.createServer((req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json' });
 
       if (user) {
+        currentUser = user;
         res.end(JSON.stringify({ success: true, role: user.role }));
       } else {
         res.end(JSON.stringify({ success: false }));
@@ -46,7 +48,16 @@ http.createServer((req, res) => {
     return;
   }
 
-  // ===== ROOT FIX (IMPORTANT FOR RAILWAY) =====
+  // LOGOUT
+  if (req.method === 'POST' && req.url === '/logout') {
+    currentUser = null;
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true }));
+    return;
+  }
+
+  // ROOT FIX
   let urlPath = decodeURIComponent((req.url || '/').split('?')[0]);
   if (urlPath === '/') urlPath = '/index.html';
 
